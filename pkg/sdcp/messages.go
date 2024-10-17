@@ -1,8 +1,8 @@
 package sdcp
 
-type DiscoveryMessage struct {
-	ID   string        `json:"Id"` // Machine brand identifier, 32-bit UUID
-	Data DiscoveryData `json:"Data"`
+type DiscoverMessage struct {
+	ID   string       `json:"Id"` // Machine brand identifier, 32-bit UUID
+	Data DiscoverData `json:"Data"`
 }
 
 type AttributesMessage struct {

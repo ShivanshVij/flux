@@ -1,6 +1,6 @@
 package sdcp
 
-type DiscoveryData struct {
+type DiscoverData struct {
 	MachineName     string `json:"Name"`            // Machine Name
 	MachineModel    string `json:"MachineName"`     // Machine Model
 	BrandName       string `json:"BrandName"`       // Brand Name

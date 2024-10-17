@@ -7,6 +7,8 @@ import (
 	"net"
 	"os"
 	"time"
+
+	"github.com/loopholelabs/logging/types"
 )
 
 var (
@@ -19,8 +21,8 @@ const (
 	BroadcastIP   = "255.255.255.255"
 	BroadcastPort = 3000
 
-	timeout              = 100 * time.Millisecond
-	maximumDiscoveryTime = 5 * time.Second
+	timeout             = 100 * time.Millisecond
+	maximumDiscoverTime = 5 * time.Second
 )
 
 var (
@@ -28,25 +30,27 @@ var (
 		IP:   net.ParseIP(BroadcastIP),
 		Port: BroadcastPort,
 	}
-	discoveryMessage = []byte("M99999")
+	discoverMessage = []byte("M99999")
 )
 
-func Discover(ctx context.Context) ([]DiscoveryMessage, error) {
+func Discover(logger types.Logger, ctx context.Context) ([]DiscoverMessage, error) {
 	connection, err := net.ListenUDP("udp", nil)
 	if err != nil {
 		return nil, errors.Join(ErrUnableCreateUDPSocket, err)
 	}
 
-	_, err = connection.WriteToUDP(discoveryMessage, broadcastAddress)
+	l := logger.SubLogger("discover")
+	l.Debug().Str("listen", connection.LocalAddr().String()).Msg("broadcasting discover message")
+	_, err = connection.WriteToUDP(discoverMessage, broadcastAddress)
 	if err != nil {
 		_ = connection.Close()
 		return nil, errors.Join(ErrBroadcastFailed, err)
 	}
 
-	_ctx, cancel := context.WithTimeout(ctx, maximumDiscoveryTime)
+	_ctx, cancel := context.WithTimeout(ctx, maximumDiscoverTime)
 	defer cancel()
 
-	var discovered []DiscoveryMessage
+	var discovered []DiscoverMessage
 	buffer := make([]byte, 8192)
 	var n int
 
@@ -69,12 +73,13 @@ func Discover(ctx context.Context) ([]DiscoveryMessage, error) {
 				_ = connection.Close()
 				return nil, errors.Join(ErrReadingUDPSocket, err)
 			}
-			var message DiscoveryMessage
+			var message DiscoverMessage
 			err = json.Unmarshal(buffer[:n], &message)
 			if err != nil {
 				_ = connection.Close()
 				return nil, errors.Join(ErrReadingUDPSocket, err)
 			}
+			l.Debug().Str("id", message.ID).Str("machine", message.Data.MainboardID).Str("IP", message.Data.MainboardIP).Msg("discovered device")
 			discovered = append(discovered, message)
 		}
 	}

@@ -17,7 +17,7 @@ type Discovery struct {
 
 func New(logger types.Logger) *Discovery {
 	i := &Discovery{
-		logger: logger.SubLogger("DISCOVERY"),
+		logger: logger.SubLogger("discovery"),
 		app:    utils.DefaultFiberApp(),
 	}
 
@@ -42,7 +42,7 @@ func (a *Discovery) init() {
 func (a *Discovery) Discovery(ctx *fiber.Ctx) error {
 	a.logger.Debug().Msgf("received Discovery request from %s", ctx.IP())
 
-	discoveries, err := sdcp.Discover(ctx.Context())
+	discoveries, err := sdcp.Discover(a.logger, ctx.Context())
 	if err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).SendString(err.Error())
 	}

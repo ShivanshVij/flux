@@ -2,13 +2,14 @@ package sdcp
 
 import (
 	"context"
+	"github.com/loopholelabs/logging"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 )
 
-func TestDiscovery(t *testing.T) {
-	discovery, err := Discover(context.Background())
+func TestDiscover(t *testing.T) {
+	discovery, err := Discover(logging.Test(t, logging.Slog, t.Name()), context.Background())
 	require.NoError(t, err)
 	if len(discovery) == 0 {
 		t.Log("no discovery messages received")
