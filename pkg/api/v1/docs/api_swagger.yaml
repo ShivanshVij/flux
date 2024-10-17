@@ -1,0 +1,36 @@
+basePath: /v1
+definitions:
+  models.HealthResponse:
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: API for Flux, V1
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0.html
+  title: Flux API V1
+  version: "1.0"
+paths:
+  /health:
+    get:
+      consumes:
+      - application/json
+      description: Returns the health and status of the various services that make
+        up the API.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.HealthResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      tags:
+      - health
+schemes:
+- https
+swagger: "2.0"
