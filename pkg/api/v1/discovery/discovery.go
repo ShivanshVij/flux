@@ -37,10 +37,6 @@ func (a *Discovery) init() {
 // @Accept       application/json
 // @Produce      application/json
 // @Success      200  {object} models.DiscoveryResponse
-// @Failure      400  {string} string
-// @Failure      401  {string} string
-// @Failure      404  {string} string
-// @Failure      412  {string} string
 // @Failure      500  {string} string
 // @Router       /discovery [post]
 func (a *Discovery) Discovery(ctx *fiber.Ctx) error {
@@ -52,10 +48,18 @@ func (a *Discovery) Discovery(ctx *fiber.Ctx) error {
 	}
 
 	res := &models.DiscoveryResponse{
-		Discovered: make([]sdcp.DiscoveryData, len(discoveries)),
+		Discovered: make([]*models.DiscoveryData, len(discoveries)),
 	}
 	for i, d := range discoveries {
-		res.Discovered[i] = d.Data
+		res.Discovered[i] = &models.DiscoveryData{
+			MachineName:     d.Data.MachineName,
+			MachineModel:    d.Data.MachineModel,
+			BrandName:       d.Data.BrandName,
+			MainboardIP:     d.Data.MainboardIP,
+			MainboardID:     d.Data.MainboardID,
+			ProtocolVersion: d.Data.ProtocolVersion,
+			FirmwareVersion: d.Data.FirmwareVersion,
+		}
 	}
 
 	return ctx.JSON(res)

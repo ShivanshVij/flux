@@ -19,6 +19,34 @@ const docTemplateapi = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/discovery": {
+            "post": {
+                "description": "Discovers new Printers",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "discovery"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.DiscoveryResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/health": {
             "get": {
                 "description": "Returns the health and status of the various services that make up the API.",
@@ -49,6 +77,50 @@ const docTemplateapi = `{
         }
     },
     "definitions": {
+        "models.DiscoveryData": {
+            "type": "object",
+            "properties": {
+                "BrandName": {
+                    "description": "Brand Name",
+                    "type": "string"
+                },
+                "FirmwareVersion": {
+                    "description": "Firmware Version",
+                    "type": "string"
+                },
+                "MachineModel": {
+                    "description": "Machine Model",
+                    "type": "string"
+                },
+                "MachineName": {
+                    "description": "Machine Name",
+                    "type": "string"
+                },
+                "MainboardID": {
+                    "description": "Motherboard ID (16-bit)",
+                    "type": "string"
+                },
+                "MainboardIP": {
+                    "description": "Motherboard IP Address",
+                    "type": "string"
+                },
+                "ProtocolVersion": {
+                    "description": "Protocol Version",
+                    "type": "string"
+                }
+            }
+        },
+        "models.DiscoveryResponse": {
+            "type": "object",
+            "properties": {
+                "discovered": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.DiscoveryData"
+                    }
+                }
+            }
+        },
         "models.HealthResponse": {
             "type": "object"
         }

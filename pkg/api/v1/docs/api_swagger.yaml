@@ -1,5 +1,36 @@
 basePath: /v1
 definitions:
+  models.DiscoveryData:
+    properties:
+      BrandName:
+        description: Brand Name
+        type: string
+      FirmwareVersion:
+        description: Firmware Version
+        type: string
+      MachineModel:
+        description: Machine Model
+        type: string
+      MachineName:
+        description: Machine Name
+        type: string
+      MainboardID:
+        description: Motherboard ID (16-bit)
+        type: string
+      MainboardIP:
+        description: Motherboard IP Address
+        type: string
+      ProtocolVersion:
+        description: Protocol Version
+        type: string
+    type: object
+  models.DiscoveryResponse:
+    properties:
+      discovered:
+        items:
+          $ref: '#/definitions/models.DiscoveryData'
+        type: array
+    type: object
   models.HealthResponse:
     type: object
 host: localhost:8080
@@ -12,6 +43,24 @@ info:
   title: Flux API V1
   version: "1.0"
 paths:
+  /discovery:
+    post:
+      consumes:
+      - application/json
+      description: Discovers new Printers
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.DiscoveryResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      tags:
+      - discovery
   /health:
     get:
       consumes:
