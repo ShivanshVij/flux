@@ -17,9 +17,9 @@ func TestDiscover(t *testing.T) {
 	for _, d := range discovery {
 		t.Logf("ID %s: Brand Name '%s'", d.ID, d.Data.BrandName)
 		t.Logf("ID %s: MachineModel '%s'", d.ID, d.Data.MachineModel)
-		t.Logf("ID %s: MainboardID '%s'", d.ID, d.Data.MainboardID)
+		t.Logf("ID %s: MachineID '%s'", d.ID, d.Data.MainboardID)
 		t.Logf("ID %s: MachineName '%s'", d.ID, d.Data.MachineName)
-		t.Logf("ID %s: MainboardIP '%s'", d.ID, d.Data.MainboardIP)
+		t.Logf("ID %s: MachineIP '%s'", d.ID, d.Data.MainboardIP)
 		t.Logf("ID %s: FirmwareVersion '%s'", d.ID, d.Data.FirmwareVersion)
 		t.Logf("ID %s: ProtocolVersion '%s'", d.ID, d.Data.ProtocolVersion)
 	}

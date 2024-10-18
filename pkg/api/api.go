@@ -1,6 +1,7 @@
 package api
 
 import (
+	"github.com/shivanshvij/flux/pkg/sdcp"
 	"net"
 
 	"github.com/gofiber/fiber/v2"
@@ -23,11 +24,13 @@ type API struct {
 	logger types.Logger
 	config *config.Config
 	app    *fiber.App
+
+	sdcp *sdcp.SDCP
 }
 
 func New(config *config.Config, logger types.Logger) *API {
 	return &API{
-		logger: logger.SubLogger("API"),
+		logger: logger.SubLogger("api"),
 		config: config,
 		app:    utils.DefaultFiberApp(1024 * 1024 * 500),
 	}
@@ -39,15 +42,17 @@ func (s *API) Start() error {
 		return err
 	}
 
+	s.sdcp = sdcp.New(s.logger)
 	v1Docs.SwaggerInfoapi.Host = s.config.Endpoint
 	v1Docs.SwaggerInfoapi.Schemes = []string{"http"}
 
 	s.app.Use(cors.New())
-	s.app.Mount(V1Path, v1.New(s.logger).App())
+	s.app.Mount(V1Path, v1.New(s.sdcp, s.logger).App())
 
 	return s.app.Listener(listener)
 }
 
 func (s *API) Stop() error {
+	s.sdcp.Close()
 	return s.app.Shutdown()
 }

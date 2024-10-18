@@ -74,6 +74,51 @@ const docTemplateapi = `{
                     }
                 }
             }
+        },
+        "/status": {
+            "post": {
+                "description": "Refreshes the status of a machine",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "discovery"
+                ],
+                "parameters": [
+                    {
+                        "description": "Status Refresh Request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.StatusRefreshRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -96,11 +141,11 @@ const docTemplateapi = `{
                     "description": "Machine Name",
                     "type": "string"
                 },
-                "MainboardID": {
+                "MachineID": {
                     "description": "Motherboard ID (16-bit)",
                     "type": "string"
                 },
-                "MainboardIP": {
+                "MachineIP": {
                     "description": "Motherboard IP Address",
                     "type": "string"
                 },
@@ -123,6 +168,17 @@ const docTemplateapi = `{
         },
         "models.HealthResponse": {
             "type": "object"
+        },
+        "models.StatusRefreshRequest": {
+            "type": "object",
+            "properties": {
+                "machine_id": {
+                    "type": "string"
+                },
+                "machine_ip": {
+                    "type": "string"
+                }
+            }
         }
     }
 }`

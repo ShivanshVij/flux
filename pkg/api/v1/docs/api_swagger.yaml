@@ -33,6 +33,13 @@ definitions:
     type: object
   models.HealthResponse:
     type: object
+  models.StatusRefreshRequest:
+    properties:
+      machine_id:
+        type: string
+      machine_ip:
+        type: string
+    type: object
 host: localhost:8080
 info:
   contact: {}
@@ -80,6 +87,35 @@ paths:
             type: string
       tags:
       - health
+  /status:
+    post:
+      consumes:
+      - application/json
+      description: Refreshes the status of a machine
+      parameters:
+      - description: Status Refresh Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.StatusRefreshRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      tags:
+      - discovery
 schemes:
 - https
 swagger: "2.0"

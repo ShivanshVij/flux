@@ -28,8 +28,8 @@ type Attributes struct {
 	FirmwareVersion              string              `json:"FirmwareVersion"`              // Firmware Version
 	Resolution                   string              `json:"Resolution"`                   // Resolution
 	XYZsize                      string              `json:"XYZsize"`                      // Maximum printing dimensions in the XYZ directions of the machine (millimeters)
-	MainboardIP                  string              `json:"MainboardIP"`                  // Motherboard IP Address
-	MainboardID                  string              `json:"MainboardID"`                  // Motherboard ID (16-bit)
+	MainboardIP                  string              `json:"MachineIP"`                    // Motherboard IP Address
+	MainboardID                  string              `json:"MachineID"`                    // Motherboard ID (16-bit)
 	NumberOfVideoStreamConnected int                 `json:"NumberOfVideoStreamConnected"` // Number of Connected Video Streams
 	MaximumVideoStreamAllowed    int                 `json:"MaximumVideoStreamAllowed"`    // Maximum Number of Connections for Video Streams
 	NetworkStatus                NetworkStatus       `json:"NetworkStatus"`                // Network Connection Status
@@ -98,9 +98,9 @@ type ErrorCodeData struct {
 }
 
 type ErrorData struct {
-	Data        ErrorCodeData `json:"Data"`        // Error Data
-	MainboardID string        `json:"MainboardID"` // Motherboard ID (16-bit)
-	TimeStamp   int           `json:"TimeStamp"`   // Timestamp
+	Data        ErrorCodeData `json:"Data"`      // Error Data
+	MainboardID string        `json:"MachineID"` // Motherboard ID (16-bit)
+	TimeStamp   int           `json:"TimeStamp"` // Timestamp
 }
 
 type NotificationTypeData struct {
@@ -109,9 +109,9 @@ type NotificationTypeData struct {
 }
 
 type NotificationData struct {
-	Data        NotificationTypeData `json:"Data"`        // Notification Type Data
-	MainboardID string               `json:"MainboardID"` // Motherboard ID (16-bit)
-	TimeStamp   int                  `json:"TimeStamp"`   // Timestamp
+	Data        NotificationTypeData `json:"Data"`      // Notification Type Data
+	MainboardID string               `json:"MachineID"` // Motherboard ID (16-bit)
+	TimeStamp   int                  `json:"TimeStamp"` // Timestamp
 }
 
 type TerminateFileTransferRequest struct {
@@ -232,4 +232,21 @@ type EnableDisableTimeLapseRequest struct {
 
 type EnableDisableTimeLapseResponse struct {
 	Ack int `json:"Ack"` // Acknowledgement
+}
+
+type RequestData[T any] struct {
+	Cmd         Command `json:"Cmd"`       // Request Command
+	Data        T       `json:"Data"`      // Request Data
+	RequestID   string  `json:"RequestID"` // Request ID
+	MainboardID string  `json:"MachineID"` // Motherboard ID
+	TimeStamp   int     `json:"TimeStamp"` // Timestamp
+	From        From    `json:"From"`      // Identify the source of the command
+}
+
+type ResponseData[T any] struct {
+	Cmd         Command `json:"Cmd"`       // Response Command
+	Data        T       `json:"Data"`      // Response Data
+	RequestID   string  `json:"RequestID"` // Request ID
+	MainboardID string  `json:"MachineID"` // Motherboard ID
+	TimeStamp   int     `json:"TimeStamp"` // Timestamp
 }

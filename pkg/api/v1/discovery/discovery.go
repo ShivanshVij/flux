@@ -55,8 +55,8 @@ func (a *Discovery) Discovery(ctx *fiber.Ctx) error {
 			MachineName:     d.Data.MachineName,
 			MachineModel:    d.Data.MachineModel,
 			BrandName:       d.Data.BrandName,
-			MainboardIP:     d.Data.MainboardIP,
-			MainboardID:     d.Data.MainboardID,
+			MachineIP:       d.Data.MainboardIP,
+			MachineID:       d.Data.MainboardID,
 			ProtocolVersion: d.Data.ProtocolVersion,
 			FirmwareVersion: d.Data.FirmwareVersion,
 		}

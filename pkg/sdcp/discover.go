@@ -21,7 +21,6 @@ const (
 	BroadcastIP   = "255.255.255.255"
 	BroadcastPort = 3000
 
-	timeout             = 100 * time.Millisecond
 	maximumDiscoverTime = 5 * time.Second
 )
 

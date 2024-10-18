@@ -2,6 +2,7 @@ package v1
 
 import (
 	"github.com/gofiber/fiber/v2"
+	"github.com/shivanshvij/flux/pkg/api/v1/machine"
 
 	"github.com/loopholelabs/logging/types"
 
@@ -9,18 +10,22 @@ import (
 	"github.com/shivanshvij/flux/pkg/api/v1/discovery"
 	"github.com/shivanshvij/flux/pkg/api/v1/docs"
 	"github.com/shivanshvij/flux/pkg/api/v1/models"
+	"github.com/shivanshvij/flux/pkg/sdcp"
 )
 
 //go:generate go run -mod=mod github.com/swaggo/swag/cmd/swag@v1.16.3 init -g v1.go -o docs --instanceName api -d ./
 type V1 struct {
 	logger types.Logger
 	app    *fiber.App
+
+	sdcp *sdcp.SDCP
 }
 
-func New(logger types.Logger) *V1 {
+func New(sdcp *sdcp.SDCP, logger types.Logger) *V1 {
 	v := &V1{
-		logger: logger.SubLogger("V1"),
+		logger: logger.SubLogger("v1"),
 		app:    utils.DefaultFiberApp(1024 * 1024 * 500),
+		sdcp:   sdcp,
 	}
 
 	v.init()
@@ -38,12 +43,14 @@ func New(logger types.Logger) *V1 {
 // @BasePath /v1
 func (v *V1) init() {
 	v.logger.Debug().Msg("initializing")
+
 	v.app.Get("/swagger.json", func(ctx *fiber.Ctx) error {
 		ctx.Response().Header.SetContentType("application/json")
 		return ctx.SendString(docs.SwaggerInfoapi.ReadDoc())
 	})
 
 	v.app.Mount("/discovery", discovery.New(v.logger).App())
+	v.app.Mount("/machine", machine.New(v.sdcp, v.logger).App())
 
 	v.app.Get("/health", v.Health)
 }
