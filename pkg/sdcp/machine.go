@@ -16,8 +16,9 @@ import (
 )
 
 var (
-	ErrDialFailed          = errors.New("dial failed")
-	ErrStatusRefreshFailed = errors.New("status refresh failed")
+	ErrDialFailed              = errors.New("dial failed")
+	ErrStatusRefreshFailed     = errors.New("status refresh failed")
+	ErrAttributesRefreshFailed = errors.New("attributes refresh failed")
 )
 
 const (
@@ -47,12 +48,18 @@ type Machine struct {
 	statusCond *sync.Cond
 	status     Status
 
+	attributesMu   sync.RWMutex
+	attributesCond *sync.Cond
+	attributes     Attributes
+
 	ctx    context.Context
 	cancel context.CancelFunc
 	wg     sync.WaitGroup
 
-	responseTopic string
-	statusTopic   string
+	requestTopic    string
+	responseTopic   string
+	statusTopic     string
+	attributesTopic string
 }
 
 func newMachine(id string, ip string, logger types.Logger) (*Machine, error) {
@@ -65,12 +72,15 @@ func newMachine(id string, ip string, logger types.Logger) (*Machine, error) {
 			Host:   fmt.Sprintf("%s:%d", ip, apiPort),
 			Path:   "/websocket",
 		},
-		inflight:      make(map[string]*inflight),
-		responseTopic: fmt.Sprintf("sdcp/response/%s", id),
-		statusTopic:   fmt.Sprintf("sdcp/status/%s", id),
+		inflight:        make(map[string]*inflight),
+		requestTopic:    fmt.Sprintf("sdcp/request/%s", id),
+		responseTopic:   fmt.Sprintf("sdcp/response/%s", id),
+		statusTopic:     fmt.Sprintf("sdcp/status/%s", id),
+		attributesTopic: fmt.Sprintf("sdcp/attributes/%s", id),
 	}
 
 	m.statusCond = sync.NewCond(&m.statusMu)
+	m.attributesCond = sync.NewCond(&m.attributesMu)
 
 	var err error
 	m.ctx, m.cancel = context.WithCancel(context.Background())
@@ -91,6 +101,13 @@ func newMachine(id string, ip string, logger types.Logger) (*Machine, error) {
 		return nil, errors.Join(ErrStatusRefreshFailed)
 	}
 
+	_, err = m.AttributesRefreshWait(m.ctx)
+	if err != nil {
+		m.stop()
+		m.logger.Error().Err(err).Msg("failed to refresh attributes")
+		return nil, errors.Join(ErrAttributesRefreshFailed)
+	}
+
 	m.wg.Add(1)
 	go m.refresh()
 
@@ -102,7 +119,7 @@ func (m *Machine) StatusRefresh(ctx context.Context) (*StatusRefreshResponse, er
 	m.logger.Info().Str("id", requestID).Msg("refreshing status")
 	msg := &Request[StatusRefreshRequest]{
 		TopicMessage: TopicMessage{
-			Topic: fmt.Sprintf("sdcp/request/%s", m.id),
+			Topic: m.requestTopic,
 		},
 		Id: identifier,
 		Data: RequestData[StatusRefreshRequest]{
@@ -176,6 +193,85 @@ func (m *Machine) Status() *Status {
 	return &s
 }
 
+func (m *Machine) AttributesRefresh(ctx context.Context) (*AttributesResponse, error) {
+	requestID := uuid.New().String()
+	m.logger.Info().Str("id", requestID).Msg("refreshing attributes")
+	msg := &Request[AttributesRequest]{
+		TopicMessage: TopicMessage{
+			Topic: m.requestTopic,
+		},
+		Id: identifier,
+		Data: RequestData[AttributesRequest]{
+			Cmd:         CommandAttribute,
+			Data:        AttributesRequest{},
+			RequestID:   requestID,
+			MainboardID: m.id,
+			TimeStamp:   int(time.Now().Unix()),
+			From:        FromPC,
+		},
+	}
+
+	i := &inflight{
+		signal:   make(chan struct{}),
+		response: new(Response[any]),
+	}
+	m.inflightMu.Lock()
+	m.inflight[requestID] = i
+	m.inflightMu.Unlock()
+	defer func() {
+		m.inflightMu.Lock()
+		delete(m.inflight, requestID)
+		m.inflightMu.Unlock()
+	}()
+
+	err := m.conn.WriteJSON(msg)
+	if err != nil {
+		m.logger.Error().Err(err).Msg("error sending attributes refresh request")
+		return nil, errors.Join(ErrAttributesRefreshFailed, err)
+	}
+
+	select {
+	case <-ctx.Done():
+		return nil, errors.Join(ErrAttributesRefreshFailed, ctx.Err())
+	case <-m.ctx.Done():
+		return nil, errors.Join(ErrAttributesRefreshFailed, m.ctx.Err())
+	case <-i.signal:
+	}
+
+	var a AttributesResponse
+	data, err := json.Marshal(i.response.Data.Data)
+	if err != nil {
+		m.logger.Error().Err(err).Msg("error encoding attributes refresh response")
+		return nil, errors.Join(ErrAttributesRefreshFailed, err)
+	}
+	err = json.Unmarshal(data, &a)
+	if err != nil {
+		m.logger.Error().Err(err).Msg("error decoding attributes refresh response")
+		return nil, errors.Join(ErrAttributesRefreshFailed, err)
+	}
+	return &a, nil
+}
+
+func (m *Machine) AttributesRefreshWait(ctx context.Context) (*Attributes, error) {
+	m.attributesMu.Lock()
+	_, err := m.AttributesRefresh(ctx)
+	if err != nil {
+		m.attributesMu.Unlock()
+		return nil, err
+	}
+	m.attributesCond.Wait()
+	a := m.attributes
+	m.attributesMu.Unlock()
+	return &a, nil
+}
+
+func (m *Machine) Attributes() *Attributes {
+	m.attributesMu.RLock()
+	a := m.attributes
+	m.attributesMu.RUnlock()
+	return &a
+}
+
 func (m *Machine) stop() {
 	m.cancel()
 	_ = m.conn.Close()
@@ -223,17 +319,29 @@ func (m *Machine) handle() {
 					m.logger.Warn().Str("request", response.Data.RequestID).Msg("unknown request")
 				}
 			case m.statusTopic:
-				var status Status
+				var status StatusMessage
 				err = json.Unmarshal(message, &status)
 				if err != nil {
 					m.logger.Error().Err(err).Msg("error decoding status message")
 					continue
 				}
 				m.statusMu.Lock()
-				m.status = status
+				m.status = status.Status
 				m.statusCond.Broadcast()
 				m.statusMu.Unlock()
 				m.logger.Debug().Msgf("received status update")
+			case m.attributesTopic:
+				var attributes AttributesMessage
+				err = json.Unmarshal(message, &attributes)
+				if err != nil {
+					m.logger.Error().Err(err).Msg("error decoding attributes message")
+					continue
+				}
+				m.attributesMu.Lock()
+				m.attributes = attributes.Attributes
+				m.attributesCond.Broadcast()
+				m.attributesMu.Unlock()
+				m.logger.Debug().Msgf("received attributes update")
 			default:
 				m.logger.Warn().Str("topic", topicMessage.Topic).Msg("unknown topic")
 			}
@@ -252,7 +360,10 @@ func (m *Machine) refresh() {
 			_, err = m.StatusRefresh(m.ctx)
 			if err != nil {
 				m.logger.Error().Err(err).Msg("error refreshing status")
-				continue
+			}
+			_, err = m.AttributesRefresh(m.ctx)
+			if err != nil {
+				m.logger.Error().Err(err).Msg("error refreshing attributes")
 			}
 		}
 	}

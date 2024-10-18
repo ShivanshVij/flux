@@ -12,8 +12,8 @@ type TopicMessage struct {
 type AttributesMessage struct {
 	TopicMessage
 	Attributes  Attributes `json:"Attributes"`
-	MainboardID string     `json:"MachineID"` // Motherboard ID (16-bit)
-	TimeStamp   int        `json:"TimeStamp"` // Timestamp
+	MainboardID string     `json:"MainboardID"` // Motherboard ID (16-bit)
+	TimeStamp   int        `json:"TimeStamp"`   // Timestamp
 }
 
 type StatusMessage struct {

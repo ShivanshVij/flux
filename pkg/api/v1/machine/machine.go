@@ -33,7 +33,12 @@ func (a *Machine) init() {
 	a.logger.Debug().Msg("initializing")
 	a.app.Post("/register", a.Register)
 	//a.app.Post("/unregister", a.Unregister)
+
 	a.app.Get("/status/:id", a.Status)
+	a.app.Post("/status/:id", a.RefreshStatus)
+
+	a.app.Get("/attributes/:id", a.Attributes)
+	a.app.Post("/attributes/:id", a.RefreshAttributes)
 }
 
 // Register godoc
@@ -133,6 +138,70 @@ func (a *Machine) RefreshStatus(ctx *fiber.Ctx) error {
 
 	return ctx.JSON(&models.MachineStatusResponse{
 		Status: *status,
+	})
+}
+
+// Attributes godoc
+// @Description  Retrieves the attributes of a machine
+// @Tags         machine
+// @Accept       application/json
+// @Produce      application/json
+// @Param        id path string true "id"
+// @Success      200  {object} models.MachineAttributesResponse
+// @Failure      400  {string} string
+// @Failure      404  {string} string
+// @Failure      500  {string} string
+// @Router       /machine/attributes/{id} [get]
+func (a *Machine) Attributes(ctx *fiber.Ctx) error {
+	a.logger.Debug().Msgf("received Attributes request from %s", ctx.IP())
+
+	id := ctx.Params("id")
+	if id == "" {
+		return fiber.NewError(fiber.StatusBadRequest, "invalid id")
+	}
+
+	m, ok := a.sdcp.GetMachine(id)
+	if !ok {
+		return fiber.NewError(fiber.StatusNotFound, "machine not found")
+	}
+
+	attributes := m.Attributes()
+	return ctx.JSON(&models.MachineAttributesResponse{
+		Attributes: *attributes,
+	})
+}
+
+// RefreshAttributes godoc
+// @Description  Refreshes and retrieves the attributes of a machine
+// @Tags         machine
+// @Accept       application/json
+// @Produce      application/json
+// @Param        id path string true "id"
+// @Success      200  {object} models.MachineAttributesResponse
+// @Failure      400  {string} string
+// @Failure      404  {string} string
+// @Failure      500  {string} string
+// @Router       /machine/attributes/{id} [post]
+func (a *Machine) RefreshAttributes(ctx *fiber.Ctx) error {
+	a.logger.Debug().Msgf("received RefreshAttributes request from %s", ctx.IP())
+
+	id := ctx.Params("id")
+	if id == "" {
+		return fiber.NewError(fiber.StatusBadRequest, "invalid id")
+	}
+
+	m, ok := a.sdcp.GetMachine(id)
+	if !ok {
+		return fiber.NewError(fiber.StatusNotFound, "machine not found")
+	}
+
+	attributes, err := m.AttributesRefreshWait(ctx.Context())
+	if err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).SendString(err.Error())
+	}
+
+	return ctx.JSON(&models.MachineAttributesResponse{
+		Attributes: *attributes,
 	})
 }
 

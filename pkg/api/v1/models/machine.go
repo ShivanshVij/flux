@@ -10,3 +10,7 @@ type MachineRegisterRequest struct {
 type MachineStatusResponse struct {
 	Status sdcp.Status `json:"status"`
 }
+
+type MachineAttributesResponse struct {
+	Attributes sdcp.Attributes `json:"attributes"`
+}

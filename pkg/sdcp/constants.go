@@ -7,7 +7,7 @@ const (
 	NetworkStatusEth  NetworkStatus = "eth"
 )
 
-type UsbDiskStatus uint8
+type UsbDiskStatus int
 
 const (
 	UsbDiskStatusDisconnected UsbDiskStatus = 0
@@ -28,7 +28,7 @@ const (
 	SupportedFileTypeCTB SupportedFileType = "CTB"
 )
 
-type TempSensorStatusOfUVLED uint8
+type TempSensorStatusOfUVLED int
 
 const (
 	TempSensorStatusOfUVLEDDisconnected TempSensorStatusOfUVLED = 0
@@ -36,14 +36,14 @@ const (
 	TempSensorStatusOfUVLEDAbnormal     TempSensorStatusOfUVLED = 2
 )
 
-type LCDStatus uint8
+type LCDStatus int
 
 const (
 	LCDStatusDisconnected LCDStatus = 0
 	LCDStatusConnected    LCDStatus = 1
 )
 
-type SgStatus uint8
+type SgStatus int
 
 const (
 	SgStatusDisconnected      SgStatus = 0
@@ -51,63 +51,70 @@ const (
 	SgStatusCalibrationFailed SgStatus = 2
 )
 
-type ZMotorStatus uint8
+type ZMotorStatus int
 
 const (
 	ZMotorStatusDisconnected ZMotorStatus = 0
 	ZMotorStatusConnected    ZMotorStatus = 1
 )
 
-type RotateMotorStatus uint8
+type RotateMotorStatus int
 
 const (
 	RotateMotorStatusDisconnected RotateMotorStatus = 0
 	RotateMotorStatusConnected    RotateMotorStatus = 1
 )
 
-type ReleaseFilmState uint8
+type ReleaseFilmState int
 
 const (
 	ReleaseFilmStateAbnormal ReleaseFilmState = 0
 	ReleaseFilmStateNormal   ReleaseFilmState = 1
 )
 
-type XMotorStatus uint8
+type XMotorStatus int
 
 const (
 	XMotorStatusDisconnected XMotorStatus = 0
 	XMotorStatusConnected    XMotorStatus = 1
 )
 
-type TimeLapseStatus uint8
+type TimeLapseStatus int
 
 const (
 	TimeLapseStatusOff TimeLapseStatus = 0
 	TimeLapseStatusOn  TimeLapseStatus = 1
 )
 
-type StorageType uint8
+type StorageType int
 
 const (
 	StorageTypeInternal StorageType = 0
 	StorageTypeExternal StorageType = 1
 )
 
-type FileType uint8
+type FileType int
 
 const (
 	FileTypeFolder FileType = 0
 	FileTypeFile   FileType = 1
 )
 
-type EnableDisable uint8
+type CameraStatus int
+
+const (
+	CameraStatusDisconnected CameraStatus = 0
+	CameraStatusConnected    CameraStatus = 1
+)
+
+type EnableDisable int
 
 const (
 	EnableDisableDisable EnableDisable = 0
 	EnableDisableEnable  EnableDisable = 1
 )
 
-type From uint8
+type From int
 
 const (
 	FromPC     From = 0 // Local PC Software Local Area Network
@@ -117,7 +124,7 @@ const (
 	FromServer From = 4 // Server
 )
 
-type FileTransferAck uint8
+type FileTransferAck int
 
 const (
 	FileTransferAckSuccess     FileTransferAck = 0 // Success
@@ -126,7 +133,7 @@ const (
 	FileTransferAckNotFound    FileTransferAck = 3 // File not found.
 )
 
-type PrintInfoError uint8
+type PrintInfoError int
 
 const (
 	PrintInfoErrorNone              PrintInfoError = 0 // Normal
@@ -137,7 +144,7 @@ const (
 	PrintInfoErrorUnknownModel      PrintInfoError = 5 // Machine Model Mismatch
 )
 
-type PrintInfoStatus uint8
+type PrintInfoStatus int
 
 const (
 	PrintInfoStatusIdle         PrintInfoStatus = 0  // Idle
@@ -153,7 +160,7 @@ const (
 	PrintInfoStatusFileChecking PrintInfoStatus = 10 // File Checking
 )
 
-type MachineStatus uint8
+type MachineStatus int
 
 const (
 	MachineStatusIdle             MachineStatus = 0 // Idle
@@ -163,7 +170,7 @@ const (
 	MachineStatusDevicesTesting   MachineStatus = 4 // Devices Testing
 )
 
-type TaskStatus uint8
+type TaskStatus int
 
 const (
 	TaskStatusOther       TaskStatus = 0 // Other
@@ -172,7 +179,7 @@ const (
 	TaskStatusStopped     TaskStatus = 3 // Stopped
 )
 
-type TimeLapseVideoStatus uint8
+type TimeLapseVideoStatus int
 
 const (
 	TimeLapseVideoStatusNotShot        TimeLapseVideoStatus = 0 // Not shot
@@ -182,7 +189,7 @@ const (
 	TimeLapseVideoStatusGenerationFail TimeLapseVideoStatus = 4 // Generation failed
 )
 
-type ControlAck uint8
+type ControlAck int
 
 const (
 	ControlAckOk                ControlAck = 0 // OK
@@ -195,7 +202,7 @@ const (
 	ControlAckUnknownModel      ControlAck = 7 // Machine Model Mismatch
 )
 
-type TaskError uint8
+type TaskError int
 
 const (
 	TaskErrorOk                    TaskError = 0  // Normal
@@ -235,14 +242,14 @@ const (
 	TaskErrorTankTempSensorError   TaskError = 34 // Resin vat temperature sensor indicates an over-temperature condition
 )
 
-type ErrorCode uint8
+type ErrorCode int
 
 const (
 	ErrorCodeMD5Failed    ErrorCode = 1 // File Transfer MD5 Check Failed
 	ErrorCodeFormatFailed ErrorCode = 2 // File format is incorrect
 )
 
-type NotificationType uint8
+type NotificationType int
 
 const (
 	HistorySynchronizationSuccessful NotificationType = 1
