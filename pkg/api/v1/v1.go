@@ -13,7 +13,7 @@ import (
 	"github.com/shivanshvij/flux/pkg/sdcp"
 )
 
-//go:generate go run -mod=mod github.com/swaggo/swag/cmd/swag@v1.16.3 init -g v1.go -o docs --instanceName api -d ./
+//go:generate go run -mod=mod github.com/swaggo/swag/cmd/swag@v1.16.3 init -g v1.go -o docs --pd --instanceName api -d ./
 type V1 struct {
 	logger types.Logger
 	app    *fiber.App

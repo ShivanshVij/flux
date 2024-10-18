@@ -2,11 +2,11 @@ package machine
 
 import (
 	"github.com/gofiber/fiber/v2"
-	"github.com/shivanshvij/flux/pkg/api/v1/models"
 
 	"github.com/loopholelabs/logging/types"
 
 	"github.com/shivanshvij/flux/internal/utils"
+	"github.com/shivanshvij/flux/pkg/api/v1/models"
 	"github.com/shivanshvij/flux/pkg/sdcp"
 )
 
@@ -42,9 +42,8 @@ func (a *Machine) init() {
 // @Accept       application/json
 // @Produce      application/json
 // @Param        request  body models.MachineRegisterRequest true  "Machine Register Request"
-// @Success      200  {string} string
+// @Success      200  {object} models.MachineStatusResponse
 // @Failure      400  {string} string
-// @Failure      404  {string} string
 // @Failure      500  {string} string
 // @Router       /machine/register [post]
 func (a *Machine) Register(ctx *fiber.Ctx) error {
@@ -59,10 +58,18 @@ func (a *Machine) Register(ctx *fiber.Ctx) error {
 
 	err = a.sdcp.Register(body.MachineID, body.MachineIP)
 	if err != nil {
-		return ctx.Status(fiber.StatusNotFound).SendString(err.Error())
+		return ctx.Status(fiber.StatusBadRequest).SendString(err.Error())
 	}
 
-	return ctx.Status(fiber.StatusOK).SendString("OK")
+	machine, ok := a.sdcp.GetMachine(body.MachineID)
+	if !ok {
+		return ctx.Status(fiber.StatusInternalServerError).SendString("machine not found after registration")
+	}
+
+	status := machine.Status()
+	return ctx.JSON(&models.MachineStatusResponse{
+		Status: *status,
+	})
 }
 
 // Status godoc
@@ -71,7 +78,7 @@ func (a *Machine) Register(ctx *fiber.Ctx) error {
 // @Accept       application/json
 // @Produce      application/json
 // @Param        id path string true "id"
-// @Success      200  {string} string
+// @Success      200  {object} models.MachineStatusResponse
 // @Failure      400  {string} string
 // @Failure      404  {string} string
 // @Failure      500  {string} string
@@ -89,12 +96,44 @@ func (a *Machine) Status(ctx *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusNotFound, "machine not found")
 	}
 
-	err := m.StatusRefresh()
+	status := m.Status()
+	return ctx.JSON(&models.MachineStatusResponse{
+		Status: *status,
+	})
+}
+
+// RefreshStatus godoc
+// @Description  Refreshes and retrieves the status of a machine
+// @Tags         machine
+// @Accept       application/json
+// @Produce      application/json
+// @Param        id path string true "id"
+// @Success      200  {object} models.MachineStatusResponse
+// @Failure      400  {string} string
+// @Failure      404  {string} string
+// @Failure      500  {string} string
+// @Router       /machine/status/{id} [post]
+func (a *Machine) RefreshStatus(ctx *fiber.Ctx) error {
+	a.logger.Debug().Msgf("received RefreshStatus request from %s", ctx.IP())
+
+	id := ctx.Params("id")
+	if id == "" {
+		return fiber.NewError(fiber.StatusBadRequest, "invalid id")
+	}
+
+	m, ok := a.sdcp.GetMachine(id)
+	if !ok {
+		return fiber.NewError(fiber.StatusNotFound, "machine not found")
+	}
+
+	status, err := m.StatusRefreshWait(ctx.Context())
 	if err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).SendString(err.Error())
 	}
 
-	return ctx.Status(fiber.StatusOK).SendString("OK")
+	return ctx.JSON(&models.MachineStatusResponse{
+		Status: *status,
+	})
 }
 
 func (a *Machine) App() *fiber.App {
