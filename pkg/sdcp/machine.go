@@ -9,8 +9,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
-	"github.com/xyproto/randomstring"
 
 	"github.com/loopholelabs/logging/types"
 )
@@ -98,7 +98,7 @@ func newMachine(id string, ip string, logger types.Logger) (*Machine, error) {
 }
 
 func (m *Machine) StatusRefresh(ctx context.Context) (*StatusRefreshResponse, error) {
-	requestID := randomstring.HumanFriendlyString(8)
+	requestID := uuid.New().String()
 	m.logger.Info().Str("id", requestID).Msg("refreshing status")
 	msg := &Request[StatusRefreshRequest]{
 		TopicMessage: TopicMessage{
