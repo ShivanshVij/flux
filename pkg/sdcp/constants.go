@@ -268,8 +268,8 @@ const (
 type Command int
 
 const (
-	CommandStatusRefresh Command = 0
-	CommandAttribute     Command = 1
+	CommandStatusRefresh     Command = 0
+	CommandAttributesRefresh Command = 1
 
 	CommandStartPrint          Command = 128
 	CommandPausePrint          Command = 129

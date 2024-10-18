@@ -129,9 +129,9 @@ type StatusRefreshResponse struct {
 	Ack int `json:"Ack"` // Acknowledgement
 }
 
-type AttributesRequest struct{}
+type AttributesRefreshRequest struct{}
 
-type AttributesResponse struct {
+type AttributesRefreshResponse struct {
 	Ack int `json:"Ack"` // Acknowledgement
 }
 

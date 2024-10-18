@@ -116,52 +116,14 @@ func newMachine(id string, ip string, logger types.Logger) (*Machine, error) {
 }
 
 func (m *Machine) StatusRefresh(ctx context.Context) (*StatusRefreshResponse, error) {
-	requestID := uuid.New().String()
-	m.logger.Info().Str("id", requestID).Msg("refreshing status")
-	msg := &Request[StatusRefreshRequest]{
-		TopicMessage: TopicMessage{
-			Topic: m.requestTopic,
-		},
-		Id: identifier,
-		Data: RequestData[StatusRefreshRequest]{
-			Cmd:         CommandStatusRefresh,
-			Data:        StatusRefreshRequest{},
-			RequestID:   requestID,
-			MainboardID: m.id,
-			TimeStamp:   int(time.Now().Unix()),
-			From:        FromPC,
-		},
-	}
-
-	i := &inflight{
-		signal:   make(chan struct{}),
-		response: new(Response[any]),
-	}
-	m.inflightMu.Lock()
-	m.inflight[requestID] = i
-	m.inflightMu.Unlock()
-	defer func() {
-		m.inflightMu.Lock()
-		delete(m.inflight, requestID)
-		m.inflightMu.Unlock()
-	}()
-
-	err := m.conn.WriteJSON(msg)
+	response, err := request(m, CommandStatusRefresh, StatusRefreshRequest{}, ctx)
 	if err != nil {
-		m.logger.Error().Err(err).Msg("error sending status refresh request")
+		m.logger.Error().Err(err).Msg("error during status refresh request")
 		return nil, errors.Join(ErrStatusRefreshFailed, err)
 	}
 
-	select {
-	case <-ctx.Done():
-		return nil, errors.Join(ErrStatusRefreshFailed, ctx.Err())
-	case <-m.ctx.Done():
-		return nil, errors.Join(ErrStatusRefreshFailed, m.ctx.Err())
-	case <-i.signal:
-	}
-
 	var s StatusRefreshResponse
-	data, err := json.Marshal(i.response.Data.Data)
+	data, err := json.Marshal(response.Data.Data)
 	if err != nil {
 		m.logger.Error().Err(err).Msg("error encoding status refresh response")
 		return nil, errors.Join(ErrStatusRefreshFailed, err)
@@ -194,53 +156,15 @@ func (m *Machine) Status() *Status {
 	return &s
 }
 
-func (m *Machine) AttributesRefresh(ctx context.Context) (*AttributesResponse, error) {
-	requestID := uuid.New().String()
-	m.logger.Info().Str("id", requestID).Msg("refreshing attributes")
-	msg := &Request[AttributesRequest]{
-		TopicMessage: TopicMessage{
-			Topic: m.requestTopic,
-		},
-		Id: identifier,
-		Data: RequestData[AttributesRequest]{
-			Cmd:         CommandAttribute,
-			Data:        AttributesRequest{},
-			RequestID:   requestID,
-			MainboardID: m.id,
-			TimeStamp:   int(time.Now().Unix()),
-			From:        FromPC,
-		},
-	}
-
-	i := &inflight{
-		signal:   make(chan struct{}),
-		response: new(Response[any]),
-	}
-	m.inflightMu.Lock()
-	m.inflight[requestID] = i
-	m.inflightMu.Unlock()
-	defer func() {
-		m.inflightMu.Lock()
-		delete(m.inflight, requestID)
-		m.inflightMu.Unlock()
-	}()
-
-	err := m.conn.WriteJSON(msg)
+func (m *Machine) AttributesRefresh(ctx context.Context) (*AttributesRefreshResponse, error) {
+	response, err := request(m, CommandAttributesRefresh, AttributesRefreshRequest{}, ctx)
 	if err != nil {
-		m.logger.Error().Err(err).Msg("error sending attributes refresh request")
+		m.logger.Error().Err(err).Msg("error during attributes refresh request")
 		return nil, errors.Join(ErrAttributesRefreshFailed, err)
 	}
 
-	select {
-	case <-ctx.Done():
-		return nil, errors.Join(ErrAttributesRefreshFailed, ctx.Err())
-	case <-m.ctx.Done():
-		return nil, errors.Join(ErrAttributesRefreshFailed, m.ctx.Err())
-	case <-i.signal:
-	}
-
-	var a AttributesResponse
-	data, err := json.Marshal(i.response.Data.Data)
+	var a AttributesRefreshResponse
+	data, err := json.Marshal(response.Data.Data)
 	if err != nil {
 		m.logger.Error().Err(err).Msg("error encoding attributes refresh response")
 		return nil, errors.Join(ErrAttributesRefreshFailed, err)
@@ -274,58 +198,19 @@ func (m *Machine) Attributes() *Attributes {
 }
 
 func (m *Machine) EnableDisableVideo(ctx context.Context, enable bool) (*EnableDisableVideoStreamResponse, error) {
-	requestID := uuid.New().String()
 	_enable := EnableDisableDisable
 	if enable {
 		_enable = EnableDisableEnable
 	}
-	m.logger.Info().Str("id", requestID).Msg("enabling/disabling video stream")
-	msg := &Request[EnableDisableVideoStreamRequest]{
-		TopicMessage: TopicMessage{
-			Topic: m.requestTopic,
-		},
-		Id: identifier,
-		Data: RequestData[EnableDisableVideoStreamRequest]{
-			Cmd: CommandEnableDisableVideoStream,
-			Data: EnableDisableVideoStreamRequest{
-				Enable: _enable,
-			},
-			RequestID:   requestID,
-			MainboardID: m.id,
-			TimeStamp:   int(time.Now().Unix()),
-			From:        FromPC,
-		},
-	}
 
-	i := &inflight{
-		signal:   make(chan struct{}),
-		response: new(Response[any]),
-	}
-	m.inflightMu.Lock()
-	m.inflight[requestID] = i
-	m.inflightMu.Unlock()
-	defer func() {
-		m.inflightMu.Lock()
-		delete(m.inflight, requestID)
-		m.inflightMu.Unlock()
-	}()
-
-	err := m.conn.WriteJSON(msg)
+	response, err := request(m, CommandEnableDisableVideoStream, EnableDisableVideoStreamRequest{Enable: _enable}, ctx)
 	if err != nil {
-		m.logger.Error().Err(err).Msg("error sending enable/disable video stream request")
-		return nil, errors.Join(ErrEnableDisableVideoFailed, err)
-	}
-
-	select {
-	case <-ctx.Done():
-		return nil, errors.Join(ErrEnableDisableVideoFailed, ctx.Err())
-	case <-m.ctx.Done():
-		return nil, errors.Join(ErrEnableDisableVideoFailed, m.ctx.Err())
-	case <-i.signal:
+		m.logger.Error().Err(err).Msg("error during status refresh request")
+		return nil, errors.Join(ErrStatusRefreshFailed, err)
 	}
 
 	var a EnableDisableVideoStreamResponse
-	data, err := json.Marshal(i.response.Data.Data)
+	data, err := json.Marshal(response.Data.Data)
 	if err != nil {
 		m.logger.Error().Err(err).Msg("error encoding enable/disable video stream response")
 		return nil, errors.Join(ErrEnableDisableVideoFailed, err)
@@ -433,4 +318,50 @@ func (m *Machine) refresh() {
 			}
 		}
 	}
+}
+
+func request[T any](m *Machine, command Command, request T, ctx context.Context) (*Response[any], error) {
+	requestID := uuid.New().String()
+	msg := &Request[T]{
+		TopicMessage: TopicMessage{
+			Topic: m.requestTopic,
+		},
+		Id: identifier,
+		Data: RequestData[T]{
+			Cmd:         command,
+			Data:        request,
+			RequestID:   requestID,
+			MainboardID: m.id,
+			TimeStamp:   int(time.Now().Unix()),
+			From:        FromPC,
+		},
+	}
+
+	i := &inflight{
+		signal:   make(chan struct{}),
+		response: new(Response[any]),
+	}
+	m.inflightMu.Lock()
+	m.inflight[requestID] = i
+	m.inflightMu.Unlock()
+	defer func() {
+		m.inflightMu.Lock()
+		delete(m.inflight, requestID)
+		m.inflightMu.Unlock()
+	}()
+
+	err := m.conn.WriteJSON(msg)
+	if err != nil {
+		return nil, err
+	}
+
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	case <-m.ctx.Done():
+		return nil, m.ctx.Err()
+	case <-i.signal:
+	}
+
+	return i.response, nil
 }
