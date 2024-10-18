@@ -16,14 +16,15 @@ import (
 )
 
 var (
-	ErrDialFailed              = errors.New("dial failed")
-	ErrStatusRefreshFailed     = errors.New("status refresh failed")
-	ErrAttributesRefreshFailed = errors.New("attributes refresh failed")
+	ErrDialFailed               = errors.New("dial failed")
+	ErrStatusRefreshFailed      = errors.New("status refresh failed")
+	ErrAttributesRefreshFailed  = errors.New("attributes refresh failed")
+	ErrEnableDisableVideoFailed = errors.New("enable/disable video failed")
 )
 
 const (
 	timeout     = 100 * time.Millisecond
-	refreshTime = 5 * time.Second
+	refreshTime = 15 * time.Second
 	apiPort     = 3030
 	identifier  = "fluxsdcp"
 )
@@ -270,6 +271,71 @@ func (m *Machine) Attributes() *Attributes {
 	a := m.attributes
 	m.attributesMu.RUnlock()
 	return &a
+}
+
+func (m *Machine) EnableDisableVideo(ctx context.Context, enable bool) (*EnableDisableVideoStreamResponse, error) {
+	requestID := uuid.New().String()
+	_enable := EnableDisableDisable
+	if enable {
+		_enable = EnableDisableEnable
+	}
+	m.logger.Info().Str("id", requestID).Msg("enabling/disabling video stream")
+	msg := &Request[EnableDisableVideoStreamRequest]{
+		TopicMessage: TopicMessage{
+			Topic: m.requestTopic,
+		},
+		Id: identifier,
+		Data: RequestData[EnableDisableVideoStreamRequest]{
+			Cmd: CommandEnableDisableVideoStream,
+			Data: EnableDisableVideoStreamRequest{
+				Enable: _enable,
+			},
+			RequestID:   requestID,
+			MainboardID: m.id,
+			TimeStamp:   int(time.Now().Unix()),
+			From:        FromPC,
+		},
+	}
+
+	i := &inflight{
+		signal:   make(chan struct{}),
+		response: new(Response[any]),
+	}
+	m.inflightMu.Lock()
+	m.inflight[requestID] = i
+	m.inflightMu.Unlock()
+	defer func() {
+		m.inflightMu.Lock()
+		delete(m.inflight, requestID)
+		m.inflightMu.Unlock()
+	}()
+
+	err := m.conn.WriteJSON(msg)
+	if err != nil {
+		m.logger.Error().Err(err).Msg("error sending enable/disable video stream request")
+		return nil, errors.Join(ErrEnableDisableVideoFailed, err)
+	}
+
+	select {
+	case <-ctx.Done():
+		return nil, errors.Join(ErrEnableDisableVideoFailed, ctx.Err())
+	case <-m.ctx.Done():
+		return nil, errors.Join(ErrEnableDisableVideoFailed, m.ctx.Err())
+	case <-i.signal:
+	}
+
+	var a EnableDisableVideoStreamResponse
+	data, err := json.Marshal(i.response.Data.Data)
+	if err != nil {
+		m.logger.Error().Err(err).Msg("error encoding enable/disable video stream response")
+		return nil, errors.Join(ErrEnableDisableVideoFailed, err)
+	}
+	err = json.Unmarshal(data, &a)
+	if err != nil {
+		m.logger.Error().Err(err).Msg("error decoding enable/disable video stream response")
+		return nil, errors.Join(ErrEnableDisableVideoFailed, err)
+	}
+	return &a, nil
 }
 
 func (m *Machine) stop() {

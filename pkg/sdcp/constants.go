@@ -26,6 +26,7 @@ type SupportedFileType string
 
 const (
 	SupportedFileTypeCTB SupportedFileType = "CTB"
+	SupportedFileTypeGOO SupportedFileType = "GOO"
 )
 
 type TempSensorStatusOfUVLED int
@@ -200,6 +201,15 @@ const (
 	ControlAckInvalidResolution ControlAck = 5 // Resolution Mismatch
 	ControlAckUnknownFormat     ControlAck = 6 // Unrecognized File Format
 	ControlAckUnknownModel      ControlAck = 7 // Machine Model Mismatch
+)
+
+type StreamAck int
+
+const (
+	StreamAckSuccess  StreamAck = 0 // Success
+	StreamAckLimit    StreamAck = 1 // Exceeded maximum simultaneous streaming limit
+	StreamAckNotExist StreamAck = 2 // Camera does not exist
+	StreamAckUnknown  StreamAck = 3 // Unknown error
 )
 
 type TaskError int

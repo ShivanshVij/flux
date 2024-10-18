@@ -14,3 +14,7 @@ type MachineStatusResponse struct {
 type MachineAttributesResponse struct {
 	Attributes sdcp.Attributes `json:"attributes"`
 }
+
+type MachineVideoResponse struct {
+	Status sdcp.EnableDisableVideoStreamResponse `json:"status"`
+}

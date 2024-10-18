@@ -222,8 +222,8 @@ type EnableDisableVideoStreamRequest struct {
 }
 
 type EnableDisableVideoStreamResponse struct {
-	Ack      int    `json:"Ack"`      // Acknowledgement
-	VideoUrl string `json:"VideoUrl"` // When opening the video stream, return the RTSP protocol address
+	Ack      StreamAck `json:"Ack"`      // Acknowledgement
+	VideoUrl string    `json:"VideoUrl"` // When opening the video stream, return the RTSP protocol address
 }
 
 type EnableDisableTimeLapseRequest struct {

@@ -42,13 +42,15 @@ func (s *SDCP) Register(machineID string, machineIP string) error {
 	return nil
 }
 
-func (s *SDCP) Unregister(machineID string) {
+func (s *SDCP) Unregister(machineID string) bool {
 	s.machinesMu.Lock()
-	if m, ok := s.machines[machineID]; ok {
+	m, ok := s.machines[machineID]
+	if ok {
 		m.stop()
 		delete(s.machines, machineID)
 	}
 	s.machinesMu.Unlock()
+	return ok
 }
 
 func (s *SDCP) GetMachine(machineID string) (*Machine, bool) {

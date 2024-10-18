@@ -32,13 +32,16 @@ func New(sdcp *sdcp.SDCP, logger types.Logger) *Machine {
 func (a *Machine) init() {
 	a.logger.Debug().Msg("initializing")
 	a.app.Post("/register", a.Register)
-	//a.app.Post("/unregister", a.Unregister)
+	a.app.Post("/unregister/:id", a.Unregister)
 
 	a.app.Get("/status/:id", a.Status)
 	a.app.Post("/status/:id", a.RefreshStatus)
 
 	a.app.Get("/attributes/:id", a.Attributes)
 	a.app.Post("/attributes/:id", a.RefreshAttributes)
+
+	a.app.Post("/video/:id", a.EnableVideo)
+	a.app.Delete("/video/:id", a.DisableVideo)
 }
 
 // Register godoc
@@ -75,6 +78,32 @@ func (a *Machine) Register(ctx *fiber.Ctx) error {
 	return ctx.JSON(&models.MachineStatusResponse{
 		Status: *status,
 	})
+}
+
+// Unregister godoc
+// @Description  Unregisters an existing machine
+// @Tags         machine
+// @Accept       application/json
+// @Produce      application/json
+// @Param        id path string true "id"
+// @Success      200  {string} string
+// @Failure      400  {string} string
+// @Failure      500  {string} string
+// @Router       /machine/unregister/{id} [post]
+func (a *Machine) Unregister(ctx *fiber.Ctx) error {
+	a.logger.Debug().Msgf("received Unregister request from %s", ctx.IP())
+
+	id := ctx.Params("id")
+	if id == "" {
+		return fiber.NewError(fiber.StatusBadRequest, "invalid id")
+	}
+
+	ok := a.sdcp.Unregister(id)
+	if !ok {
+		return ctx.Status(fiber.StatusNotFound).SendString("machine not found")
+	}
+
+	return ctx.Status(fiber.StatusOK).SendString("machine unregistered")
 }
 
 // Status godoc
@@ -202,6 +231,74 @@ func (a *Machine) RefreshAttributes(ctx *fiber.Ctx) error {
 
 	return ctx.JSON(&models.MachineAttributesResponse{
 		Attributes: *attributes,
+	})
+}
+
+// EnableVideo godoc
+// @Description  Enables Video streaming on a machine
+// @Tags         machine
+// @Accept       application/json
+// @Produce      application/json
+// @Param        id path string true "id"
+// @Success      200  {object} models.MachineVideoResponse
+// @Failure      400  {string} string
+// @Failure      404  {string} string
+// @Failure      500  {string} string
+// @Router       /machine/video/{id} [post]
+func (a *Machine) EnableVideo(ctx *fiber.Ctx) error {
+	a.logger.Debug().Msgf("received EnableVideo request from %s", ctx.IP())
+
+	id := ctx.Params("id")
+	if id == "" {
+		return fiber.NewError(fiber.StatusBadRequest, "invalid id")
+	}
+
+	m, ok := a.sdcp.GetMachine(id)
+	if !ok {
+		return fiber.NewError(fiber.StatusNotFound, "machine not found")
+	}
+
+	status, err := m.EnableDisableVideo(ctx.Context(), true)
+	if err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).SendString(err.Error())
+	}
+
+	return ctx.JSON(&models.MachineVideoResponse{
+		Status: *status,
+	})
+}
+
+// DisableVideo godoc
+// @Description  Disables Video streaming on a machine
+// @Tags         machine
+// @Accept       application/json
+// @Produce      application/json
+// @Param        id path string true "id"
+// @Success      200  {object} models.MachineVideoResponse
+// @Failure      400  {string} string
+// @Failure      404  {string} string
+// @Failure      500  {string} string
+// @Router       /machine/video/{id} [delete]
+func (a *Machine) DisableVideo(ctx *fiber.Ctx) error {
+	a.logger.Debug().Msgf("received DisableVideo request from %s", ctx.IP())
+
+	id := ctx.Params("id")
+	if id == "" {
+		return fiber.NewError(fiber.StatusBadRequest, "invalid id")
+	}
+
+	m, ok := a.sdcp.GetMachine(id)
+	if !ok {
+		return fiber.NewError(fiber.StatusNotFound, "machine not found")
+	}
+
+	status, err := m.EnableDisableVideo(ctx.Context(), false)
+	if err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).SendString(err.Error())
+	}
+
+	return ctx.JSON(&models.MachineVideoResponse{
+		Status: *status,
 	})
 }
 
